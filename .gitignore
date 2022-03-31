@@ -1,0 +1,6 @@
+db/*
+!db/.gitkeep
+env/*
+.config
+TODO
+docs/
