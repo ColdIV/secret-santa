@@ -1,9 +1,11 @@
 # Secret Santa
 A small web application which randomly assigns all participants to each other and lets you add some preferences for them to know.
 
+**Note:** To register new users, the admin has to add them to the database (via the admin panel at `/admin`) without a password set. The password will then be set by the first user who tries to login with the given name. This is not secure, but good enough for me right now as I do not want to handle registrations by random bots.
+
 # Setup
     git clone https://github.com/ColdIV/secret-santa.git
-    cd drawingboard
+    cd secret-santa
     virtualenv env
 ### Linux
     source env/bin/activate
