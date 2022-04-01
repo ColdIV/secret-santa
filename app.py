@@ -128,9 +128,7 @@ def login():
                     return redirect(url_for('admin.index'))
                 else:
                     return redirect('/')
-            print('test1', user.name, user.password)
             if name == user.name and (user.password == '' or user.password == None):
-                print('test2')
                 # Register user (NOT SECURE, BUT OK FOR ME)
                 user.password = password
                 db.session.commit()
