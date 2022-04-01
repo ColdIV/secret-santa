@@ -3,6 +3,8 @@ A small web application which randomly assigns all participants to each other an
 
 **Note:** To register new users, the admin has to add them to the database (via the admin panel at `/admin`) without a password set. The password will then be set by the first user who tries to login with the given name. This is not secure, but good enough for me right now as I do not want to handle registrations by random bots.
 
+**Currently the templates are in german as I made this website for my families annual "secret-santa" at easter. I will change that soon-ish.**
+
 # Setup
     git clone https://github.com/ColdIV/secret-santa.git
     cd secret-santa
