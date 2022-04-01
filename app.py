@@ -1,13 +1,10 @@
 from flask import Flask, redirect, url_for, render_template, request
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import and_, or_, extract, func
 from flask_admin import Admin , AdminIndexView, expose
 from flask_admin.contrib.sqla import ModelView
 from flask_login import UserMixin, LoginManager, current_user, login_user, logout_user, login_required
 from getpass import getpass
 import hashlib
-import os
-import time
 import random
 import sys
 from waitress import serve
@@ -39,8 +36,8 @@ def unauthorized():
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(20), unique=True)
-    password = db.Column(db.String(20))
-    note = db.Column(db.Text)
+    password = db.Column(db.String(200))
+    preferences = db.Column(db.Text, default='')
     hasDrawn = db.Column(db.Integer, default=0)
     wasDrawn = db.Column(db.Integer, default=0)
     isAdmin = db.Column(db.Boolean)
@@ -72,7 +69,40 @@ admin.add_view(MyModelView(User, db.session))
 @app.route('/')
 @login_required
 def index():
-    return render_template('index.html')
+    return render_template('index.html', preferences=current_user.preferences)
+
+@app.route('/', methods=['POST'])
+@login_required
+def indexPost():
+    preferences = request.form['preferences'] or None
+    if not preferences:
+        # I am too lazy for an error. There is an 'required' set within the textarea, stop fiddling with the HTML.
+        return render_template('index.html')
+    current_user.preferences = preferences
+    db.session.commit()
+
+    # Check if user already has drawn a person
+    # if not, draw a person randomly.
+    if current_user.hasDrawn == 0:
+        # User has not yet drawn a person
+        undrawn = User.query.filter(User.id != current_user.id).filter(User.wasDrawn == 0).all()
+        # If there are only two persons left, we chose one that hasn't drawn yet.
+        if len(undrawn) == 2:
+            if undrawn[0].hasDrawn == 0:
+                tmpPerson = undrawn[0]
+            else:
+                tmpPerson = undrawn[1]
+        # Otherwise we just chose one at random
+        else:
+            tmpPerson = undrawn[random.randint(0, len(undrawn) - 1)]
+        tmpPerson.wasDrawn = current_user.id
+        current_user.hasDrawn = tmpPerson.id
+        db.session.commit()
+        person = tmpPerson
+    else:
+        person = User.query.filter_by(id=current_user.hasDrawn).first()
+
+    return render_template('index_submitted.html', person=person.name, preferences=person.preferences)
 
 @app.route('/login', methods=['GET'])
 def loginForm():
@@ -108,7 +138,7 @@ def login():
                 return redirect('/')
     
     alerts = []
-    alerts.append(['error','login is invalid.'])
+    alerts.append(['Error:','Login is invalid.'])
     return render_template('login_form.html', alerts=alerts)
 
 @app.route('/logout')

@@ -16,15 +16,19 @@
                         <a href="/logout">Logout</a>
                     </div>
                     <h1 class="pb-3 pt-2">Wichteln</h1>
-                    <form method="post" autocomplete="off" class="d-flex flex-column w-100">
-                        <p>
-                            Hier kannst du eintragen, was du besonders magst und was gar nicht.<br>
-                            Danach das Formular abschicken um einen Namen zu ziehen.<br>
-                            Solltest du schon einen Namen gezogen haben, wird der nach dem Abschicken wieder angezeigt.
-                        </p>
-                        <textarea rows="7" cols="50" name="preferences" class="form-control" required>{{preferences}}</textarea>
-                        <input type="submit" value="Abschicken" class="mt-3 btn btn-primary">
-                    </form>
+                    <p class="alert alert-success w-100">
+                        Präferenzen wurden gespeichert!
+                    </p>
+                    <p class="py-2">Du hast <strong>{{person}}</strong> gezogen!</p>
+                    <p class="w-100"><strong>{{person}}</strong> hat folgende Präferenzen angegeben:</p>
+                    <textarea rows="7" cols="50" class="form-control" disabled>{{preferences}}</textarea>
+                    {% if preferences == '' %}
+                    <div class="alert alert-info mt-3 w-100">
+                        Sollte das Feld leer sein, dann hat <strong>{{person}}</strong> noch keine Angaben gemacht.<br>
+                        Guck einfach später nochmal rein.
+                    </div>
+                    {% endif %}
+                    <a href="/" class="btn btn-primary mt-3">← Zurück</a>
                 </div>
             </div>
         </div>
