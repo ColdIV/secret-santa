@@ -25,6 +25,9 @@
                         <textarea rows="7" cols="50" name="preferences" class="form-control" required>{{preferences}}</textarea>
                         <input type="submit" value="Abschicken" class="mt-3 btn btn-primary">
                     </form>
+                    {% for alert in alerts: %}
+                        <p class="alert alert-danger w-100 mt-3"><strong class="pe-1">{{alert[0]}}</strong>{{alert[1]}}</p>
+                    {% endfor %}
                 </div>
             </div>
         </div>
