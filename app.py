@@ -15,7 +15,7 @@ config.read('.config')
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_DATABASE_URI'] ='sqlite:///db/data.db'
+app.config['SQLALCHEMY_DATABASE_URI'] ='sqlite:///data.db'
 app.config['SECRET_KEY'] = config['app']['secret']
 
 db = SQLAlchemy(app)
@@ -27,7 +27,7 @@ def sha512(str):
 
 @login.user_loader
 def load_user(user_id):
-    return User.query.get(user_id)
+    return db.session.get(User, user_id)
 
 @login.unauthorized_handler
 def unauthorized():
@@ -94,7 +94,12 @@ def indexPost():
                 tmpPerson = undrawn[1]
         # Otherwise we just chose one at random
         else:
-            tmpPerson = undrawn[random.randint(0, len(undrawn) - 1)]
+            if (len(undrawn) > 0):
+                tmpPerson = undrawn[random.randint(0, len(undrawn) - 1)]
+            else:
+                alerts = []
+                alerts.append(['Error:','You have to add users first. This is not a single-player game.'])
+                return render_template('index.html', preferences=current_user.preferences, alerts=alerts)
         tmpPerson.wasDrawn = current_user.id
         current_user.hasDrawn = tmpPerson.id
         db.session.commit()
@@ -146,14 +151,15 @@ def logout():
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    db.create_all()
-    if User.query.count() < 1:
-        uname = input('Enter admin name: ')
-        upassword = getpass('Enter admin password: ')
-        upassword = sha512(upassword)
-        admin = User(name=uname, password=upassword, isAdmin=True)
-        db.session.add(admin)
-        db.session.commit()
+    with app.app_context():
+        db.create_all()
+        if User.query.count() < 1:
+            uname = input('Enter admin name: ')
+            upassword = getpass('Enter admin password: ')
+            upassword = sha512(upassword)
+            admin = User(name=uname, password=upassword, isAdmin=True)
+            db.session.add(admin)
+            db.session.commit()
     if len(sys.argv) >= 2 and sys.argv[1] == 'dev':
         app.run(debug=True)
     else:
