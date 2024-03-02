@@ -68,6 +68,15 @@ class MyAdminIndexView(AdminIndexView):
 admin = Admin(app, index_view=MyAdminIndexView())
 admin.add_view(MyModelView(User, db.session))
 
+@app.route('/admin/reset', methods=['GET', 'POST'])
+@login_required
+def reset():
+    if not current_user.isAdmin:
+        return redirect('/')
+    User.query.update({'preferences': '', 'hasDrawn': 0, 'wasDrawn': 0, 'participates': False})
+    db.session.commit()
+    return redirect('/admin/user/')
+
 @app.route('/')
 @login_required
 def index():
