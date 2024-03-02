@@ -22,7 +22,11 @@
                             Danach das Formular abschicken um einen Namen zu ziehen.<br>
                             Solltest du schon einen Namen gezogen haben, wird der nach dem Abschicken wieder angezeigt.
                         </p>
+                        {% if not participating: %}
+                        <textarea rows="7" cols="50" name="preferences" class="form-control" required disabled></textarea>
+                        {% else %}
                         <textarea rows="7" cols="50" name="preferences" class="form-control" required>{{preferences}}</textarea>
+                        {% endif %}
                         <input type="submit" value="Abschicken" class="mt-3 btn btn-primary">
                     </form>
                     {% for alert in alerts: %}

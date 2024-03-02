@@ -36,11 +36,13 @@ def unauthorized():
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(20), unique=True)
+    displayName = db.Column(db.String(20), unique=True)
     password = db.Column(db.String(200))
     preferences = db.Column(db.Text, default='')
     hasDrawn = db.Column(db.Integer, default=0)
     wasDrawn = db.Column(db.Integer, default=0)
     isAdmin = db.Column(db.Boolean)
+    participates = db.Column(db.Boolean, default=False)
 
 class MyModelView(ModelView):
     def is_accessible(self):
@@ -69,11 +71,16 @@ admin.add_view(MyModelView(User, db.session))
 @app.route('/')
 @login_required
 def index():
-    return render_template('index.html', preferences=current_user.preferences)
+    if not current_user.participates:
+        return render_template('index.html', alerts=[('error', 'You are not currently participating.')])
+    return render_template('index.html', preferences=current_user.preferences, participating=current_user.participates)
 
 @app.route('/', methods=['POST'])
 @login_required
 def indexPost():
+    if not current_user.participates:
+        return render_template('index.html', alerts=[('error', 'You are not currently participating.')])
+
     preferences = request.form['preferences'] or None
     if not preferences:
         # I am too lazy for an error. There is an 'required' set within the textarea, stop fiddling with the HTML.
@@ -85,7 +92,7 @@ def indexPost():
     # if not, draw a person randomly.
     if current_user.hasDrawn == 0:
         # User has not yet drawn a person
-        undrawn = User.query.filter(User.id != current_user.id).filter(User.wasDrawn == 0).all()
+        undrawn = User.query.filter(User.id != current_user.id).filter(User.wasDrawn == 0).filter(User.participates == True).all()
         # If there are only two persons left, we chose one that hasn't drawn yet.
         if len(undrawn) == 2:
             if undrawn[0].hasDrawn == 0:
@@ -99,7 +106,7 @@ def indexPost():
             else:
                 alerts = []
                 alerts.append(['Error:','You have to add users first. This is not a single-player game.'])
-                return render_template('index.html', preferences=current_user.preferences, alerts=alerts)
+                return render_template('index.html', preferences=current_user.preferences, alerts=alerts, participating=current_user.participates)
         tmpPerson.wasDrawn = current_user.id
         current_user.hasDrawn = tmpPerson.id
         db.session.commit()
@@ -107,7 +114,7 @@ def indexPost():
     else:
         person = User.query.filter_by(id=current_user.hasDrawn).first()
 
-    return render_template('index_submitted.html', person=person.name, preferences=person.preferences)
+    return render_template('index_submitted.html', person=person.displayName, preferences=person.preferences, participating=current_user.participates)
 
 @app.route('/login', methods=['GET'])
 def loginForm():
@@ -133,16 +140,44 @@ def login():
                     return redirect(url_for('admin.index'))
                 else:
                     return redirect('/')
-            if name == user.name and (user.password == '' or user.password == None):
-                # Register user (NOT SECURE, BUT OK FOR ME)
-                user.password = password
-                db.session.commit()
-                login_user(user)
-                return redirect('/')
     
     alerts = []
     alerts.append(['Error:','Login is invalid.'])
     return render_template('login_form.html', alerts=alerts)
+
+@app.route('/register', methods=['GET'])
+def registerForm():
+    if current_user.is_authenticated and current_user.isAdmin:
+        return redirect(url_for('admin.index'))
+    elif current_user.is_authenticated:
+        return redirect('/')
+    return render_template('register_form.html')
+
+@app.route('/register', methods=['POST'])
+def register():
+    name = request.form['name'] or None
+    password = request.form['password'] or None
+    repeatPassword = request.form['repeatPassword'] or None
+
+    if password != repeatPassword:
+        alerts = []
+        alerts.append(['Error:','Passwords do not match.'])
+        return render_template('register_form.html', alerts=alerts)
+
+    if name and password:
+        password = sha512(password)
+
+        users = User.query.all()
+        if not name in [user.name for user in users]:
+            user = User(name=name, displayName=name, password=password, isAdmin=False, participates=False)
+            db.session.add(user)
+            db.session.commit()
+            login_user(user)
+            return redirect('/')
+    
+    alerts = []
+    alerts.append(['Error:','An error occured.'])
+    return render_template('register_form.html', alerts=alerts)
 
 @app.route('/logout')
 @login_required
@@ -157,7 +192,7 @@ if __name__ == '__main__':
             uname = input('Enter admin name: ')
             upassword = getpass('Enter admin password: ')
             upassword = sha512(upassword)
-            admin = User(name=uname, password=upassword, isAdmin=True)
+            admin = User(name=uname, displayName=uname, password=upassword, isAdmin=True)
             db.session.add(admin)
             db.session.commit()
     if len(sys.argv) >= 2 and sys.argv[1] == 'dev':
