@@ -5,6 +5,8 @@ A small web application which randomly assigns all participants to each other an
 
 **Currently the templates are in german as I made this website for my families annual "secret-santa" at easter. I will change that soon-ish.**
 
+**Requires Python 3.8 or higher!**
+
 # Setup
     git clone https://github.com/ColdIV/secret-santa.git
     cd secret-santa
