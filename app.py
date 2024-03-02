@@ -57,6 +57,8 @@ class MyAdminIndexView(AdminIndexView):
         return self.render('admin/index.html')
 
     def render(self, template, **kwargs):
+        users = User.query.all()
+        kwargs['users'] = users
         return super(AdminIndexView, self).render('admin/index.html', **kwargs)
 
     def is_accessible(self):
@@ -75,7 +77,19 @@ def reset():
         return redirect('/')
     User.query.update({'preferences': '', 'hasDrawn': 0, 'wasDrawn': 0, 'participates': False})
     db.session.commit()
-    return redirect('/admin/user/')
+    return redirect('/admin/')
+
+
+@app.route('/admin/participant/<int:user_id>')
+@login_required
+def participant(user_id):
+    if not current_user.isAdmin:
+        return redirect('/')
+    user = User.query.filter_by(id=user_id).first()
+    if user is not None:
+        user.participates = True
+        db.session.commit()
+    return redirect('/admin/')
 
 @app.route('/')
 @login_required
